@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RC Commander — Điều Khiển Xe Mô Hình</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #060a0f;
+    --panel: #0a1220;
+    --border: #1a3a5c;
+    --accent: #00d4ff;
+    --accent2: #ff6b00;
+    --green: #00ff88;
+    --red: #ff2244;
+    --text: #c8e0f0;
+    --dim: #4a7a9b;
+    --glow: 0 0 20px rgba(0,212,255,0.4);
+    --glow2: 0 0 20px rgba(255,107,0,0.5);
+  }
+
+  body {
+    font-family: 'Share Tech Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridScroll 20s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 100% 100%, rgba(255,107,0,0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes gridScroll {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(40px); }
+  }
+
+  /* ===== SCREENS ===== */
+  .screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: opacity 0.5s, transform 0.5s;
+  }
+  .screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.97);
+  }
+
+  /* ===== LOGIN ===== */
+  .login-box {
+    width: min(420px, 94vw);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 40px;
+    position: relative;
+    clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+  }
+
+  .login-box::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px; right: -1px; bottom: -1px;
+    background: linear-gradient(135deg, var(--accent) 0%, transparent 40%, transparent 60%, var(--accent2) 100%);
+    clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+    z-index: -1;
+    opacity: 0.4;
+  }
+
+  .login-logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .login-logo .car-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 0 12px var(--accent));
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { filter: drop-shadow(0 0 12px var(--accent)); }
+    50% { filter: drop-shadow(0 0 24px var(--accent)); }
+  }
+
+  .login-logo h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 4px;
+    text-shadow: var(--glow);
+  }
+
+  .login-logo p {
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    margin-top: 4px;
+  }
+
+  .login-field {
+    margin-bottom: 16px;
+  }
+
+  .login-field label {
+    display: block;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .login-field input {
+    width: 100%;
+    background: rgba(0,212,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .login-field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(0,212,255,0.2);
+  }
+
+  .login-field input::placeholder { color: var(--dim); }
+
+  .btn-login {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    padding: 13px;
+    cursor: pointer;
+    margin-top: 8px;
+    position: relative;
+    overflow: hidden;
+    transition: color 0.3s;
+    text-transform: uppercase;
+  }
+
+  .btn-login::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    transform: translateX(-100%);
+    transition: transform 0.3s;
+    z-index: -1;
+  }
+
+  .btn-login:hover { color: var(--bg); }
+  .btn-login:hover::before { transform: translateX(0); }
+  .btn-login:active { transform: scale(0.98); }
+
+  .login-hint {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 1px;
+  }
+
+  .login-hint span { color: var(--accent2); }
+
+  .login-error {
+    text-align: center;
+    font-size: 11px;
+    color: var(--red);
+    margin-top: 10px;
+    min-height: 16px;
+    letter-spacing: 1px;
+  }
+
+  /* ===== DASHBOARD ===== */
+  #dashboard {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .dash-layout {
+    width: 100%;
+    height: 100vh;
+    display: grid;
+    grid-template-rows: 52px 1fr 120px;
+    grid-template-columns: 200px 1fr 200px;
+    gap: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .dash-header {
+    grid-column: 1 / -1;
+    background: rgba(10,18,32,0.9);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 20px;
+  }
+
+  .dash-logo {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-shadow: var(--glow);
+    white-space: nowrap;
+  }
+
+  .dash-status-bar {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    justify-content: center;
+  }
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 1px;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: blink 1.5s ease-in-out infinite;
+  }
+
+  .status-dot.orange { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+  .status-dot.red { background: var(--red); box-shadow: 0 0 6px var(--red); animation: none; }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .dash-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--accent2);
+  }
+
+  .btn-logout {
+    background: none;
+    border: 1px solid rgba(255,34,68,0.4);
+    color: var(--red);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: background 0.2s;
+  }
+
+  .btn-logout:hover { background: rgba(255,34,68,0.1); }
+
+  /* Left panel */
+  .panel-left {
+    background: rgba(10,18,32,0.7);
+    border-right: 1px solid var(--border);
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel-title {
+    font-size: 9px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(0,212,255,0.2);
+    padding-bottom: 6px;
+  }
+
+  /* Speed meter */
+  .speed-meter {
+    text-align: center;
+  }
+
+  .speed-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 42px;
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: var(--glow);
+    line-height: 1;
+  }
+
+  .speed-unit {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 2px;
+  }
+
+  /* Bar gauges */
+  .gauge {
+    margin-bottom: 10px;
+  }
+
+  .gauge-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--dim);
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+  }
+
+  .gauge-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gauge-fill {
+    height: 100%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    transition: width 0.3s;
+    position: relative;
+  }
+
+  .gauge-fill.orange { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+  .gauge-fill.green { background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+  /* Direction indicator */
+  .dir-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+
+  .dir-btn-display {
+    aspect-ratio: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.1s;
+  }
+
+  .dir-btn-display.active {
+    background: rgba(0,212,255,0.15);
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(0,212,255,0.3);
+  }
+
+  /* Center — Camera/Map view */
+  .panel-center {
+    position: relative;
+    overflow: hidden;
+    background: #020508;
+  }
+
+  .camera-view {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  /* Simulated car top-down view */
+  .car-arena {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background:
+      radial-gradient(ellipse at center, rgba(0,212,255,0.03) 0%, transparent 70%);
+  }
+
+  /* Road lines */
+  .road-h, .road-v {
+    position: absolute;
+    background: rgba(255,255,255,0.04);
+  }
+  .road-h { left: 0; right: 0; height: 60px; top: 50%; transform: translateY(-50%); }
+  .road-v { top: 0; bottom: 0; width: 60px; left: 50%; transform: translateX(-50%); }
+
+  .road-dash-h, .road-dash-v {
+    position: absolute;
+    background: rgba(255,255,255,0.15);
+  }
+  .road-dash-h { height: 2px; width: 40px; top: 50%; transform: translateY(-50%); }
+  .road-dash-v { width: 2px; height: 40px; left: 50%; transform: translateX(-50%); }
+
+  /* Car top-down SVG */
+  .car-model {
+    position: absolute;
+    width: 40px;
+    height: 68px;
+    transition: left 0.15s, top 0.15s;
+    filter: drop-shadow(0 0 16px rgba(0,212,255,0.8));
+    transform: translate(-50%, -50%);
+  }
+
+  /* HUD overlays */
+  .hud-corner {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border-color: rgba(0,212,255,0.3);
+    border-style: solid;
+  }
+  .hud-corner.tl { top: 12px; left: 12px; border-width: 2px 0 0 2px; }
+  .hud-corner.tr { top: 12px; right: 12px; border-width: 2px 2px 0 0; }
+  .hud-corner.bl { bottom: 12px; left: 12px; border-width: 0 0 2px 2px; }
+  .hud-corner.br { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; }
+
+  .hud-crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 1px solid rgba(0,212,255,0.4);
+    border-radius: 50%;
+  }
+
+  .hud-crosshair::before, .hud-crosshair::after {
+    content: '';
+    position: absolute;
+    background: rgba(0,212,255,0.4);
+  }
+  .hud-crosshair::before { width: 30px; height: 1px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+  .hud-crosshair::after { width: 1px; height: 30px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+  .hud-label {
+    position: absolute;
+    font-size: 9px;
+    color: rgba(0,212,255,0.5);
+    letter-spacing: 1px;
+  }
+  .hud-label.tl { top: 16px; left: 68px; }
+  .hud-label.tr { top: 16px; right: 68px; text-align: right; }
+
+  .scan-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,212,255,0.15), transparent);
+    animation: scan 4s linear infinite;
+  }
+
+  @keyframes scan {
+    0% { top: 0; }
+    100% { top: 100%; }
+  }
+
+  .camera-label {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    color: rgba(0,212,255,0.4);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  /* Right panel */
+  .panel-right {
+    background: rgba(10,18,32,0.7);
+    border-left: 1px solid var(--border);
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  /* Log */
+  .log-feed {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .log-entry {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 0.5px;
+    border-left: 2px solid transparent;
+    padding-left: 6px;
+    animation: logIn 0.3s ease;
+  }
+
+  .log-entry.cmd { border-color: var(--accent); color: var(--text); }
+  .log-entry.warn { border-color: var(--accent2); color: var(--accent2); }
+  .log-entry.sys { border-color: var(--green); color: rgba(0,255,136,0.7); }
+
+  @keyframes logIn {
+    from { opacity: 0; transform: translateX(10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Stats */
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .stat-row .val {
+    color: var(--accent);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+  }
+
+  .stat-row .val.orange { color: var(--accent2); }
+  .stat-row .val.green { color: var(--green); }
+
+  /* ===== CONTROLLER BAR ===== */
+  .control-bar {
+    grid-column: 1 / -1;
+    background: rgba(6,10,15,0.95);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    gap: 20px;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+
+  /* D-pad */
+  .dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 44px);
+    grid-template-rows: repeat(3, 44px);
+    gap: 3px;
+  }
+
+  .dpad-btn {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    border-radius: 2px;
+  }
+
+  .dpad-btn:nth-child(2),
+  .dpad-btn:nth-child(4),
+  .dpad-btn:nth-child(6),
+  .dpad-btn:nth-child(8) {
+    border-color: rgba(0,212,255,0.2);
+  }
+
+  .dpad-btn.center-btn {
+    background: rgba(255,107,0,0.08);
+    border-color: rgba(255,107,0,0.3);
+    color: var(--accent2);
+    font-size: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.5px;
+  }
+
+  .dpad-btn:active, .dpad-btn.pressed {
+    background: rgba(0,212,255,0.2);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 12px rgba(0,212,255,0.3);
+    transform: scale(0.93);
+  }
+
+  .dpad-btn.center-btn:active, .dpad-btn.center-btn.pressed {
+    background: rgba(255,107,0,0.25);
+    border-color: var(--accent2);
+    color: var(--accent2);
+    box-shadow: var(--glow2);
+  }
+
+  .dpad-blank { visibility: hidden; }
+
+  /* Speed slider */
+  .speed-control {
+    flex: 1;
+    max-width: 200px;
+    text-align: center;
+  }
+
+  .speed-control label {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 3px;
+    background: rgba(255,255,255,0.1);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent);
+    cursor: pointer;
+  }
+
+  /* Action buttons */
+  .action-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .action-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 6px 14px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .action-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .action-btn.on { border-color: var(--green); color: var(--green); box-shadow: 0 0 8px rgba(0,255,136,0.2); }
+  .action-btn.danger { border-color: var(--red); color: var(--red); }
+
+  /* Connection select */
+  .conn-panel {
+    text-align: center;
+    min-width: 130px;
+  }
+
+  .conn-panel label {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .conn-select {
+    width: 100%;
+    background: rgba(0,212,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 5px 8px;
+    outline: none;
+    margin-bottom: 6px;
+  }
+
+  .conn-select:focus { border-color: var(--accent); }
+
+  .conn-btn {
+    width: 100%;
+    background: none;
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 5px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+
+  .conn-btn:hover { background: rgba(0,255,136,0.1); }
+  .conn-btn.disconnected { border-color: var(--red); color: var(--red); }
+  .conn-btn.disconnected:hover { background: rgba(255,34,68,0.1); }
+
+  /* Joystick zone (mobile) */
+  .joystick-zone {
+    width: 120px;
+    height: 120px;
+    position: relative;
+    display: none;
+  }
+
+  .joystick-base {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(0,212,255,0.05);
+    border: 2px solid rgba(0,212,255,0.2);
+    position: relative;
+    touch-action: none;
+  }
+
+  .joystick-knob {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, rgba(0,212,255,0.8), rgba(0,212,255,0.3));
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 12px rgba(0,212,255,0.5);
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    transition: box-shadow 0.1s;
+  }
+
+  /* Road dashes animation */
+  .road-dashes-h {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 20px;
+    overflow: hidden;
+  }
+
+  .road-dashes-v {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow: hidden;
+  }
+
+  .rd {
+    background: rgba(255,255,255,0.15);
+    flex-shrink: 0;
+  }
+  .rd-h { width: 30px; height: 100%; }
+  .rd-v { height: 30px; width: 100%; }
+
+  /* Mobile responsive */
+  @media (max-width: 700px) {
+    .dash-layout {
+      grid-template-rows: 48px 1fr 160px;
+      grid-template-columns: 1fr;
+    }
+    .panel-left, .panel-right { display: none; }
+    .panel-center { grid-column: 1; }
+    .control-bar { padding: 8px 12px; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .conn-panel { display: none; }
+    .speed-control { max-width: 140px; }
+    .dpad-btn { width: 40px; height: 40px; font-size: 14px; }
+    .dpad { grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 40px); }
+  }
+
+  .tab-link {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    letter-spacing: 1px;
+  }
+
+  .tab-link:hover { color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="login" class="screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="car-icon">🚗</span>
+      <h1>RC COMMANDER</h1>
+      <p>REMOTE CONTROL SYSTEM v2.4</p>
+    </div>
+
+    <div id="loginTab">
+      <div class="login-field">
+        <label>OPERATOR ID</label>
+        <input type="text" id="loginUser" placeholder="nhập tên đăng nhập..." autocomplete="off">
+      </div>
+      <div class="login-field">
+        <label>ACCESS CODE</label>
+        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="off">
+      </div>
+      <div class="login-error" id="loginError"></div>
+      <button class="btn-login" onclick="doLogin()">⚡ AUTHENTICATE & CONNECT</button>
+      <div class="login-hint" style="margin-top:14px">
+        
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+
+<!-- ===== DASHBOARD ===== -->
+<div id="dashboard" class="screen hidden">
+  <div class="dash-layout">
+
+    <!-- Header -->
+    <header class="dash-header">
+      <div class="dash-logo">⚡ RC COMMANDER</div>
+      <div class="dash-status-bar">
+        <div class="status-item"><div class="status-dot" id="connDot"></div><span id="connText">CONNECTED</span></div>
+        <div class="status-item"><div class="status-dot orange"></div><span id="pingText">PING: 24ms</span></div>
+        <div class="status-item" id="battStatus"><div class="status-dot green" id="battDot"></div><span id="battText">PIN: 87%</span></div>
+      </div>
+      <div class="dash-user">
+        <span>OPERATOR: <span id="currentUser" style="color:var(--accent)"></span></span>
+        <button class="btn-logout" onclick="doLogout()">LOGOUT</button>
+      </div>
+    </header>
+
+    <!-- Left panel -->
+    <div class="panel-left">
+      <div class="panel-title">TELEMETRY</div>
+
+      <div class="speed-meter">
+        <div class="speed-value" id="speedDisplay">0</div>
+        <div class="speed-unit">KM/H</div>
+      </div>
+
+      <div>
+        <div class="gauge">
+          <div class="gauge-label"><span>THROTTLE</span><span id="throttleVal">0%</span></div>
+          <div class="gauge-bar"><div class="gauge-fill" id="throttleBar" style="width:0%"></div></div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-label"><span>SIGNAL</span><span id="signalVal">95%</span></div>
+          <div class="gauge-bar"><div class="gauge-fill green" id="signalBar" style="width:95%"></div></div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-label"><span>BATTERY</span><span id="battVal">87%</span></div>
+          <div class="gauge-bar"><div class="gauge-fill orange" id="battBar" style="width:87%"></div></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel-title" style="margin-bottom:8px">DIRECTION</div>
+        <div class="dir-grid">
+          <div class="dir-btn-display dpad-blank"></div>
+          <div class="dir-btn-display" id="dir-up">↑</div>
+          <div class="dir-btn-display dpad-blank"></div>
+          <div class="dir-btn-display" id="dir-left">←</div>
+          <div class="dir-btn-display" id="dir-center">●</div>
+          <div class="dir-btn-display" id="dir-right">→</div>
+          <div class="dir-btn-display dpad-blank"></div>
+          <div class="dir-btn-display" id="dir-down">↓</div>
+          <div class="dir-btn-display dpad-blank"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center — Car view -->
+    <div class="panel-center">
+      <div class="car-arena">
+        <!-- Roads -->
+        <div class="road-h"></div>
+        <div class="road-v"></div>
+        <div class="road-dashes-h" id="rdH"></div>
+        <div class="road-dashes-v" id="rdV"></div>
+
+        <!-- Car SVG top-down -->
+        <div class="car-model" id="carModel" style="left:50%;top:50%">
+          <svg viewBox="0 0 40 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Body -->
+            <rect x="6" y="8" width="28" height="52" rx="6" fill="#1a3a5c"/>
+            <rect x="8" y="10" width="24" height="48" rx="5" fill="#0d2840"/>
+            <!-- Windshield -->
+            <rect x="10" y="14" width="20" height="12" rx="2" fill="rgba(0,212,255,0.3)" stroke="rgba(0,212,255,0.5)" stroke-width="0.5"/>
+            <!-- Rear window -->
+            <rect x="10" y="44" width="20" height="8" rx="2" fill="rgba(0,212,255,0.2)" stroke="rgba(0,212,255,0.3)" stroke-width="0.5"/>
+            <!-- Headlights -->
+            <rect x="8" y="8" width="8" height="5" rx="1" fill="rgba(255,255,200,0.8)"/>
+            <rect x="24" y="8" width="8" height="5" rx="1" fill="rgba(255,255,200,0.8)"/>
+            <!-- Taillights -->
+            <rect x="8" y="55" width="8" height="5" rx="1" fill="rgba(255,50,50,0.8)"/>
+            <rect x="24" y="55" width="8" height="5" rx="1" fill="rgba(255,50,50,0.8)"/>
+            <!-- Wheels -->
+            <rect x="1" y="12" width="6" height="10" rx="2" fill="#333"/>
+            <rect x="33" y="12" width="6" height="10" rx="2" fill="#333"/>
+            <rect x="1" y="46" width="6" height="10" rx="2" fill="#333"/>
+            <rect x="33" y="46" width="6" height="10" rx="2" fill="#333"/>
+            <!-- Center stripe -->
+            <rect x="18" y="14" width="4" height="40" rx="1" fill="rgba(0,212,255,0.15)"/>
+            <!-- Glow underbody -->
+            <ellipse cx="20" cy="34" rx="12" ry="20" fill="none" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+          </svg>
+        </div>
+
+        <!-- HUD overlays -->
+        <div class="hud-corner tl"></div>
+        <div class="hud-corner tr"></div>
+        <div class="hud-corner bl"></div>
+        <div class="hud-corner br"></div>
+        <div class="hud-crosshair"></div>
+        <div class="hud-label tl" id="coordLabel">X: 0.00  Y: 0.00</div>
+        <div class="hud-label tr" id="timeLabel"></div>
+        <div class="scan-line"></div>
+        <div class="camera-label">TRACKING VIEW — CAM01</div>
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <div class="panel-right">
+      <div class="panel-title">SYSTEM LOG</div>
+      <div class="log-feed" id="logFeed"></div>
+
+      <div>
+        <div class="panel-title" style="margin-bottom:8px">STATISTICS</div>
+        <div class="stat-row">
+          <span>DIST</span>
+          <span class="val" id="statDist">0.0m</span>
+        </div>
+        <div class="stat-row">
+          <span>SESSION</span>
+          <span class="val green" id="statTime">00:00</span>
+        </div>
+        <div class="stat-row">
+          <span>CMD/s</span>
+          <span class="val orange" id="statCmd">0</span>
+        </div>
+        <div class="stat-row">
+          <span>MAX SPD</span>
+          <span class="val" id="statMax">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Control bar -->
+    <div class="control-bar">
+      <!-- D-pad -->
+      <div class="dpad">
+        <div class="dpad-blank"></div>
+        <button class="dpad-btn" id="btn-up"   data-dir="up">▲</button>
+        <div class="dpad-blank"></div>
+        <button class="dpad-btn" id="btn-left"  data-dir="left">◀</button>
+        <button class="dpad-btn center-btn" id="btn-stop" data-dir="stop">STOP</button>
+        <button class="dpad-btn" id="btn-right" data-dir="right">▶</button>
+        <div class="dpad-blank"></div>
+        <button class="dpad-btn" id="btn-down"  data-dir="down">▼</button>
+        <div class="dpad-blank"></div>
+      </div>
+
+      <!-- Speed -->
+      <div class="speed-control">
+        <label>TỐC ĐỘ TỐI ĐA</label>
+        <input type="range" id="speedSlider" min="1" max="100" value="60" title="Maximum speed control slider">
+        <div style="font-size:10px;color:var(--accent);text-align:center;margin-top:4px" id="speedSliderLabel">60%</div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="action-btns">
+        <button class="action-btn" id="btnLight" onclick="toggleLight()">💡 ĐÈN: TẮT</button>
+        <button class="action-btn" id="btnHorn"  onmousedown="hornOn()" onmouseup="hornOff()" ontouchstart="hornOn()" ontouchend="hornOff()">📯 CÒI</button>
+        <button class="action-btn" id="btnTurbo" onclick="toggleTurbo()">⚡ TURBO</button>
+      </div>
+
+      <!-- Connection -->
+      <div class="conn-panel">
+        <label>KẾT NỐI</label>
+        <select class="conn-select" id="connSelect" title="Connection type selection dropdown">
+          <option>Bluetooth HC-05</option>
+          <option>Wi-Fi ESP32</option>
+          <option>WebSocket</option>
+          <option>Demo Mode</option>
+        </select>
+        <button class="conn-btn" id="connBtn" onclick="toggleConn()">DISCONNECT</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ===== USER STORAGE =====
+const USERS_KEY = 'rc_users';
+
+function getUsers() {
+  try { return JSON.parse(localStorage.getItem(USERS_KEY)) || {}; } catch { return {}; }
+}
+
+function saveUsers(users) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+// Default users
+(function initDefaultUsers() {
+  const users = getUsers();
+  if (!users['admin']) {
+    users['admin'] = { password: 'admin123', role: 'ADMIN', joined: new Date().toISOString() };
+    users['driver1'] = { password: '1234', role: 'DRIVER', joined: new Date().toISOString() };
+    saveUsers(users);
+  }
+})();
+
+function quickFill(name) {
+  document.getElementById('loginUser').value = name;
+  document.getElementById('loginPass').focus();
+}
+
+// ===== AUTH =====
+let currentUser = null;
+
+function doLogin() {
+  const user = document.getElementById('loginUser').value.trim().toLowerCase();
+  const pass = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginError');
+
+  if (!user || !pass) { err.textContent = '⚠ VUI LÒNG NHẬP ĐẦY ĐỦ'; return; }
+
+  const users = getUsers();
+  if (!users[user]) { err.textContent = '✗ OPERATOR KHÔNG TỒN TẠI'; return; }
+  if (users[user].password !== pass) { err.textContent = '✗ ACCESS CODE SAI'; return; }
+
+  currentUser = user;
+  err.textContent = '';
+  showDashboard(user);
+}
+
+document.getElementById('loginPass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('loginUser').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('loginPass').focus();
+});
+
+function doLogout() {
+  currentUser = null;
+  clearSessionTimers();
+  stopCar();
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('login').classList.remove('hidden');
+  document.getElementById('dashboard').classList.add('hidden');
+}
+
+// ===== DASHBOARD =====
+function showDashboard(user) {
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('dashboard').classList.remove('hidden');
+  document.getElementById('currentUser').textContent = user.toUpperCase();
+  startSession();
+  addLog(`OPERATOR [${user.toUpperCase()}] AUTHENTICATED`, 'sys');
+  addLog('SYSTEM READY — DEMO MODE', 'sys');
+  addLog('ALL CHANNELS NOMINAL', 'sys');
+  simulateSignal();
+}
+
+// ===== CAR STATE =====
+const carState = {
+  x: 50, y: 50,       // % of arena
+  angle: 0,           // degrees
+  speed: 0,
+  maxSpeed: 60,
+  keys: new Set(),
+  lightOn: false,
+  turboOn: false,
+  hornOn: false,
+  dist: 0,
+  maxSpeedReached: 0,
+  cmdCount: 0,
+};
+
+const dirMap = { up:'dir-up', down:'dir-down', left:'dir-left', right:'dir-right' };
+
+function setDirIndicator(dir) {
+  Object.values(dirMap).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+  if (dir === 'stop') {
+    document.getElementById('dir-center').style.color = 'var(--red)';
+    return;
+  }
+  document.getElementById('dir-center').style.color = '';
+  if (dir && dirMap[dir]) document.getElementById(dirMap[dir]).classList.add('active');
+}
+
+function stopCar() {
+  carState.keys.clear();
+  carState.speed = 0;
+  updateThrottle(0);
+  setDirIndicator(null);
+}
+
+let animFrame = null;
+
+function updateCar() {
+  const s = carState;
+  let moved = false;
+  let dir = null;
+
+  const spd = s.turboOn ? Math.min(100, s.maxSpeed * 1.6) : s.maxSpeed;
+  const step = spd * 0.0018;
+
+  if (s.keys.has('up'))    { s.y -= step; s.angle = 0;   dir = 'up';    moved = true; }
+  if (s.keys.has('down'))  { s.y += step; s.angle = 180; dir = 'down';  moved = true; }
+  if (s.keys.has('left'))  { s.x -= step; s.angle = 270; dir = 'left';  moved = true; }
+  if (s.keys.has('right')) { s.x += step; s.angle = 90;  dir = 'right'; moved = true; }
+
+  // Boundary
+  s.x = Math.max(5, Math.min(95, s.x));
+  s.y = Math.max(5, Math.min(95, s.y));
+
+  if (moved) {
+    s.speed = Math.min(spd, s.speed + 2);
+    s.dist += step * 0.5;
+    s.cmdCount++;
+    if (s.speed > s.maxSpeedReached) s.maxSpeedReached = s.speed;
+  } else {
+    s.speed = Math.max(0, s.speed - 3);
+    dir = null;
+  }
+
+  const car = document.getElementById('carModel');
+  if (car) {
+    car.style.left = s.x + '%';
+    car.style.top  = s.y + '%';
+    car.style.transform = `translate(-50%, -50%) rotate(${s.angle}deg)`;
+  }
+
+  const sp = Math.round(s.speed);
+  document.getElementById('speedDisplay').textContent = sp;
+  updateThrottle(Math.round(s.speed));
+
+  document.getElementById('coordLabel').textContent =
+    `X: ${(s.x/100 - 0.5).toFixed(2)}  Y: ${(s.y/100 - 0.5).toFixed(2)}`;
+
+  document.getElementById('statDist').textContent = s.dist.toFixed(1) + 'm';
+  document.getElementById('statMax').textContent = Math.round(s.maxSpeedReached);
+  setDirIndicator(dir);
+
+  animFrame = requestAnimationFrame(updateCar);
+}
+
+function updateThrottle(val) {
+  const pct = Math.round((val / 100) * 100);
+  document.getElementById('throttleBar').style.width = pct + '%';
+  document.getElementById('throttleVal').textContent = pct + '%';
+}
+
+// ===== CONTROLS =====
+document.querySelectorAll('.dpad-btn').forEach(btn => {
+  const dir = btn.dataset.dir;
+  if (!dir) return;
+
+  function press() {
+    if (dir === 'stop') {
+      carState.keys.clear();
+      addLog('EMERGENCY STOP', 'warn');
+    } else {
+      carState.keys.add(dir);
+      addLog(`CMD → ${dir.toUpperCase()}`, 'cmd');
+    }
+    btn.classList.add('pressed');
+  }
+
+  function release() {
+    carState.keys.delete(dir);
+    btn.classList.remove('pressed');
+  }
+
+  btn.addEventListener('mousedown', press);
+  btn.addEventListener('mouseup', release);
+  btn.addEventListener('mouseleave', release);
+  btn.addEventListener('touchstart', e => { e.preventDefault(); press(); }, { passive: false });
+  btn.addEventListener('touchend', e => { e.preventDefault(); release(); }, { passive: false });
+});
+
+// Keyboard
+const keyMap = {
+  'ArrowUp': 'up', 'w': 'up', 'W': 'up',
+  'ArrowDown': 'down', 's': 'down', 'S': 'down',
+  'ArrowLeft': 'left', 'a': 'left', 'A': 'left',
+  'ArrowRight': 'right', 'd': 'right', 'D': 'right',
+  ' ': 'stop'
+};
+
+document.addEventListener('keydown', e => {
+  if (document.getElementById('dashboard').classList.contains('hidden')) return;
+  const dir = keyMap[e.key];
+  if (!dir) return;
+  e.preventDefault();
+  if (dir === 'stop') { carState.keys.clear(); return; }
+  if (!carState.keys.has(dir)) {
+    carState.keys.add(dir);
+    const btn = document.getElementById('btn-' + dir);
+    if (btn) btn.classList.add('pressed');
+  }
+});
+
+document.addEventListener('keyup', e => {
+  const dir = keyMap[e.key];
+  if (!dir || dir === 'stop') return;
+  carState.keys.delete(dir);
+  const btn = document.getElementById('btn-' + dir);
+  if (btn) btn.classList.remove('pressed');
+});
+
+// Speed slider
+document.getElementById('speedSlider').addEventListener('input', function() {
+  carState.maxSpeed = +this.value;
+  document.getElementById('speedSliderLabel').textContent = this.value + '%';
+});
+
+// ===== FEATURES =====
+function toggleLight() {
+  carState.lightOn = !carState.lightOn;
+  const btn = document.getElementById('btnLight');
+  if (carState.lightOn) {
+    btn.textContent = '💡 ĐÈN: BẬT';
+    btn.classList.add('on');
+    addLog('HEADLIGHTS ON', 'cmd');
+  } else {
+    btn.textContent = '💡 ĐÈN: TẮT';
+    btn.classList.remove('on');
+    addLog('HEADLIGHTS OFF', 'cmd');
+  }
+}
+
+let hornTimer = null;
+function hornOn() {
+  addLog('🔊 HORN ACTIVE', 'warn');
+}
+function hornOff() {
+  addLog('HORN OFF', 'cmd');
+}
+
+function toggleTurbo() {
+  carState.turboOn = !carState.turboOn;
+  const btn = document.getElementById('btnTurbo');
+  if (carState.turboOn) {
+    btn.textContent = '⚡ TURBO: ON';
+    btn.classList.add('on');
+    addLog('TURBO MODE ENGAGED', 'warn');
+  } else {
+    btn.textContent = '⚡ TURBO';
+    btn.classList.remove('on');
+    addLog('TURBO MODE OFF', 'cmd');
+  }
+}
+
+// ===== CONNECTION =====
+let connected = true;
+
+function toggleConn() {
+  connected = !connected;
+  const btn = document.getElementById('connBtn');
+  const dot = document.getElementById('connDot');
+  const text = document.getElementById('connText');
+
+  if (connected) {
+    btn.textContent = 'DISCONNECT';
+    btn.classList.remove('disconnected');
+    dot.style.background = 'var(--green)';
+    dot.style.boxShadow = '0 0 6px var(--green)';
+    text.textContent = 'CONNECTED';
+    addLog('CONNECTION ESTABLISHED', 'sys');
+  } else {
+    btn.textContent = 'CONNECT';
+    btn.classList.add('disconnected');
+    dot.style.background = 'var(--red)';
+    dot.style.boxShadow = '0 0 6px var(--red)';
+    text.textContent = 'OFFLINE';
+    addLog('CONNECTION LOST', 'warn');
+    stopCar();
+  }
+}
+
+// ===== LOG =====
+const MAX_LOGS = 12;
+
+function addLog(msg, type = '') {
+  const feed = document.getElementById('logFeed');
+  if (!feed) return;
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8);
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type}`;
+  entry.textContent = `[${ts}] ${msg}`;
+  feed.insertBefore(entry, feed.firstChild);
+  while (feed.children.length > MAX_LOGS) feed.removeChild(feed.lastChild);
+  carState.cmdCount++;
+  document.getElementById('statCmd').textContent =
+    Math.round(carState.cmdCount / Math.max(1, sessionSeconds));
+}
+
+// ===== SESSION TIMER =====
+let sessionSeconds = 0;
+let sessionTimer = null;
+let pingTimer = null;
+let battTimer = null;
+
+function clearSessionTimers() {
+  clearInterval(sessionTimer);
+  clearInterval(pingTimer);
+  clearInterval(battTimer);
+  if (animFrame) cancelAnimationFrame(animFrame);
+  sessionSeconds = 0;
+  carState.dist = 0;
+  carState.cmdCount = 0;
+  carState.maxSpeedReached = 0;
+  carState.speed = 0;
+  carState.x = 50;
+  carState.y = 50;
+}
+
+function startSession() {
+  clearSessionTimers();
+  animFrame = requestAnimationFrame(updateCar);
+
+  sessionTimer = setInterval(() => {
+    sessionSeconds++;
+    const m = String(Math.floor(sessionSeconds/60)).padStart(2,'0');
+    const s = String(sessionSeconds%60).padStart(2,'0');
+    document.getElementById('statTime').textContent = `${m}:${s}`;
+  }, 1000);
+
+  pingTimer = setInterval(() => {
+    const ping = 18 + Math.floor(Math.random()*40);
+    document.getElementById('pingText').textContent = `PING: ${ping}ms`;
+    const sig = 85 + Math.floor(Math.random()*15);
+    document.getElementById('signalBar').style.width = sig + '%';
+    document.getElementById('signalVal').textContent = sig + '%';
+  }, 2000);
+
+  let batt = 87;
+  battTimer = setInterval(() => {
+    batt = Math.max(0, batt - 0.05);
+    const pct = Math.round(batt);
+    document.getElementById('battBar').style.width = pct + '%';
+    document.getElementById('battVal').textContent = pct + '%';
+    document.getElementById('battText').textContent = `PIN: ${pct}%`;
+    const dot = document.getElementById('battDot');
+    if (pct < 20) { dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 6px var(--red)'; }
+    else if (pct < 40) { dot.style.background = 'var(--accent2)'; dot.style.boxShadow = '0 0 6px var(--accent2)'; }
+  }, 5000);
+
+  // Clock
+  setInterval(() => {
+    document.getElementById('timeLabel').textContent = new Date().toTimeString().slice(0,8);
+  }, 1000);
+}
+
+// ===== SIGNAL SIMULATION =====
+function simulateSignal() {
+  // Random log messages to simulate real system
+  const msgs = [
+    ['TELEMETRY SYNC OK', 'sys'],
+    ['GPS LOCK ACQUIRED', 'sys'],
+    ['MOTOR TEMP: 42°C', 'cmd'],
+    ['RF CHANNEL: 2.4GHz', 'sys'],
+    ['AUTO-BRAKE STANDBY', 'cmd'],
+  ];
+  let i = 0;
+  const t = setInterval(() => {
+    if (i >= msgs.length) { clearInterval(t); return; }
+    addLog(msgs[i][0], msgs[i][1]);
+    i++;
+  }, 600);
+}
+
+// ===== ROAD DASHES =====
+(function buildRoadDashes() {
+  const rdH = document.getElementById('rdH');
+  const rdV = document.getElementById('rdV');
+  if (rdH) for (let i = 0; i < 20; i++) {
+    const d = document.createElement('div');
+    d.className = 'rd rd-h';
+    rdH.appendChild(d);
+  }
+  if (rdV) for (let i = 0; i < 20; i++) {
+    const d = document.createElement('div');
+    d.className = 'rd rd-v';
+    rdV.appendChild(d);
+  }
+})();
+</script>
+</body>
+</html>
