@@ -1072,9 +1072,8 @@ function saveUsers(users) {
 // Default users
 (function initDefaultUsers() {
   const users = getUsers();
-  if (!users['admin']) {
-    users['admin'] = { password: 'admin123', role: 'ADMIN', joined: new Date().toISOString() };
-    users['driver1'] = { password: '1234', role: 'DRIVER', joined: new Date().toISOString() };
+  if (!users['thang']) {
+    users['thang'] = { password: '1111', role: 'DRIVER', joined: new Date().toISOString() };
     saveUsers(users);
   }
 })();
